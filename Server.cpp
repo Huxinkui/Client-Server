@@ -5,7 +5,7 @@ Server::Server():m_port(0){
 }
 Server::~Server()
 {
-
+	delete m_server;
 }
 
 //静态成员变量初始化，要放在cpp文件，否则会出现多重定义问题，
@@ -28,3 +28,26 @@ Server * Server::get_Instance()
 // {
 // 	return server;
 // }
+// 
+// 
+int Server::set_port()
+{	
+	cout << "Please input listen Port :" <<endl;
+	cin >> m_port;
+	return 0;
+}
+int Server::get_port()
+{
+	return m_port;
+}
+
+int Server::Start()
+{
+	int ret = set_port();
+	
+
+
+
+
+	return 0;
+}

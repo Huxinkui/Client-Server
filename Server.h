@@ -11,6 +11,9 @@
 #include<stdio.h>
 using namespace std;
 
+#define BUFSIZE  1024;
+
+
 class Server
 {
 
@@ -18,15 +21,21 @@ public:
 
 	~Server();
 	static Server * get_Instance();
-	int Run();
+	int Start();
+	int set_port();
+	int get_port();
 
 private:
 	Server();
 	static Server * m_server;
 
-	int m_port;
-	struct sockaddr_in  server_sockaddr;
+	int m_port;//监听端口
+	int server_socket;//服务端套接字
+	int client_socket;//客户端套接字
+	struct sockaddr_in  server_sockaddr;//服务端网络地址结构体
+	struct sockaddr_in  client_sockaddr;//客户端网络地址结构体
 
+	char buf[BUFSIZE];//数据缓冲区
 
 };
 
