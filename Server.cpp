@@ -1,6 +1,6 @@
 #include "Server.h"
 
-Server::Server(){
+Server::Server():m_port(0){
 
 }
 Server::~Server()
