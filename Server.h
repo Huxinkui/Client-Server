@@ -9,9 +9,11 @@
 #include<memory>
 #include<mutex>
 #include<stdio.h>
+#include<stdlib.h>
+#include<unistd.h>
 using namespace std;
 
-#define BUFSIZE  1024;
+#define BUFSIZE  1024
 
 
 class Server
@@ -30,7 +32,7 @@ private:
 	static Server * m_server;
 
 	int m_port;//监听端口
-	int server_socket;//服务端套接字
+	int server_socket;//服务端监听套接字
 	int client_socket;//客户端套接字
 	struct sockaddr_in  server_sockaddr;//服务端网络地址结构体
 	struct sockaddr_in  client_sockaddr;//客户端网络地址结构体
