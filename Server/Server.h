@@ -36,7 +36,7 @@ private:
 
 	int m_port;//监听端口
 	string m_msg;
-	DataPackage m_dataPackage;
+	//DataPackage m_dataPackage;
 	int server_socket;//服务端监听套接字
 	int client_socket;//客户端套接字
 	struct sockaddr_in  server_sockaddr;//服务端网络地址结构体

@@ -96,40 +96,46 @@ int Server::Start()
 		cout << "客户端连接成功" << endl;
 	}
 	cout << "新客户端加入： IP = " << inet_ntoa(client_sockaddr.sin_addr) << endl;
-	m_dataPackage.name = "HuXinkui";
-	m_dataPackage.Gender = "Male";
-	m_dataPackage.age = 28;
-	m_dataPackage.name_size = sizeof(m_dataPackage.name);
-	m_dataPackage.Gender_size = sizeof(m_dataPackage.Gender);
+	// m_dataPackage.name = "HuXinkui";
+	// m_dataPackage.Gender = "Male";
+	// m_dataPackage.age = 28;
+	// m_dataPackage.name_size = sizeof(m_dataPackage.name);
+	// m_dataPackage.Gender_size = sizeof(m_dataPackage.Gender);
 
 	// cout << "DataPackage size :" << sizeof(m_dataPackage) << endl;
 	// cout << "DataPackage size :" << sizeof(DataPackage) << endl;
 	
 	while(1)
 	{	
-		
+		cout << "等待接受消息"<<endl;
 		int n = recv(client_socket,buf,BUFSIZE, 0);
 		if(n <= 0)
 		{
 			cout << " 客户端已退出，任务结束";
 			break;
 		}
-		buf[n] = '\0';
-		if(0 == strcmp(buf, "getInfo"))
+		// buf[n] = '\0';
+		DataHeader dl;
+		DLDeserialize(dl, buf, n);
+		Login login;
+		Logout logout;
+
+		switch(dl.cmd)
 		{
-			char tmpMsg[BUFSIZE] ={0};
-
-			int cout = Serialize(m_dataPackage,tmpMsg);
-
-			send(client_socket, tmpMsg, cout, 0);			
-		}else{
-			string tmpMsg = "请输入命令：getInfo";
-			send(client_socket, tmpMsg.c_str(), tmpMsg.length(), 0);
+			case LOGIN:
+				LoginDeserialize(login, buf, n);
+				cout << "Name : " << login.name << " Password : " << login.password << endl;
+				break;
+			case LOGOUT:
+				InfoDeserialize(logout, buf, n);
+				cout <<"Logout: Data Length : " << n <<" Name : " << logout.info << endl;
+				break;
+			default:
+				cout << "The cmd is error !" << endl;
+				break;
 		}
-		//cout << " Recv msg form client : "<< buf <<endl;
-		// send(client_socket, m_msg.c_str(), m_msg.length(), 0);
 
-		// close(client_socket);
+
 	}
 	close(client_socket);
 	close(server_socket);

@@ -63,19 +63,40 @@ int Client::Start(){
 		{
 			break;
 		}
-		else{
-			send(client_socket,m_msg.c_str(),m_msg.length(),0);
+		else if(0 == strcmp(m_msg.c_str(), "Login")){
+
+			Login login;
+			login.name = "Huxinkui";
+			login.password = "1234567890";
+			login.nameLength = login.name.length();
+			login.passwordLength = login.password.length();
+			login.dataLenth = sizeof(login);
+			cout << "Login name :" << login.name <<endl;
+			char tmpbuf[2048] = {0};
+			LoginSerialize(login, tmpbuf);
+			cout << "Length :" << login.dataLenth << endl;
+			send(client_socket,tmpbuf,sizeof(tmpbuf),0);
 		}
-		//send(client_socket, m_msg.c_str(), sizeof(m_msg.c_str()), 0);
+		else if(0 == strcmp(m_msg.c_str(), "Logout")){
+			Logout loginout;
+			loginout.info = "Huxinkui";
+			loginout.infoLength = loginout.info.length();
+			loginout.dataLenth = sizeof(loginout);
+			cout << "Logout name :" << loginout.info <<endl;
+			char tmpbuf[2048] = {0};
+			InfoSerialize(loginout, tmpbuf);
+			send(client_socket,tmpbuf,sizeof(tmpbuf),0);
+		}
 		
-		int n = recv(client_socket,buf,BUFSIZE, 0);
-		cout << "recv size : " << n <<endl; 
-		DataPackage  dp ;
-		Deserialize(dp, buf, n);
-		if (n > 0 )
-		{
-			cout << "name : " << dp.name << " age: "<< dp.age << " Gender: "<< dp.Gender << endl;
-		}
+		
+		// int n = recv(client_socket,buf,BUFSIZE, 0);
+		// //cout << "recv size : " << n <<endl; 
+		// DataPackage  dp ;
+		// Deserialize(dp, buf, n);
+		// if (n > 0 )
+		// {
+		// 	cout << "name : " << dp.name << " age: "<< dp.age << " Gender: "<< dp.Gender << endl;
+		// }
 		
 	}
 	close(client_socket);
