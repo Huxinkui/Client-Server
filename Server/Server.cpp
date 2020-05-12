@@ -108,16 +108,15 @@ int Server::Start()
 	while(1)
 	{	
 		int n = recv(client_socket,buf,BUFSIZE, 0);
-		
+		if(n < 0)
+		{
+			cout << "接收消息错误" << endl;
+			break;
+		}
 		DataHeader dl;
 		int tmpn = 0;
 		DLDeserialize(dl, buf, tmpn);
-		if(sizeof(buf) != dl.dataLenth)
-		{
-
-			cout << "收到数据错误！收到数据长度 ： " << sizeof(buf) << " 发送数据长度： " << dl.dataLenth << endl;
-			break;
-		}
+		
 
 		Login login;
 		Logout logout;
@@ -127,6 +126,11 @@ int Server::Start()
 			case LOGIN:
 				//反序列化，将buf中的数据解析
 				LoginDeserialize(login, buf, n);
+				if(sizeof(login) != login.dataLenth)
+				{
+					cout << "Login收到数据错误！服务端收到数据长度 ： " << sizeof(login) << " 客户端发送数据长度： " << login.dataLenth << endl;
+					break;
+				}
 				cout << "Login: Name : " << login.name << " Password : " << login.password << endl;
 				//设置接受消息应答数据
 				lgRes.info = "用户登录成功";
@@ -134,6 +138,12 @@ int Server::Start()
 				break;
 			case LOGOUT:
 				InfoDeserialize(logout, buf, n);
+
+				if(sizeof(logout) != logout.dataLenth)
+				{
+					cout << "Logout收到数据错误！服务端收到数据长度 ： " << sizeof(logout) << " 客户端发送数据长度： " << logout.dataLenth << endl;
+					break;
+				}
 				cout <<"Logout: Data Length : " << n <<" Name : " << logout.info << endl;
 				//设置接受消息应答数据
 				lgRes.info = "用户登出成功";

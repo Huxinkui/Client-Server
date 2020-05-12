@@ -90,15 +90,15 @@ int Client::Start(){
 
 		memset(buf, 0, sizeof(buf[BUFSIZE]));
 		int n = recv(client_socket,buf,BUFSIZE, 0);
-		
+		if(n < 0)
+		{
+			cout << "接收消息错误"<<endl;
+			break;
+		}
 		DataHeader dl;
 		int tmpn = 0;
 		DLDeserialize(dl, buf, tmpn);
-		if(n != dl.dataLenth)
-		{
-			cout << "收到数据错误！收到数据长度 ： " << sizeof(buf) << " 发送数据长度： " << dl.dataLenth << endl;
-			break;
-		}
+		
 
 		ResultInfo lgRes;
 
@@ -107,7 +107,12 @@ int Client::Start(){
 			case LOGINRESULT:
 				//反序列化，将buf中的数据解析
 				InfoDeserialize(lgRes, buf, tmpn);
-				
+
+				if(sizeof(lgRes) != lgRes.dataLenth)
+				{
+					cout << "Login收到数据错误！客户端收到数据长度 ： " << sizeof(lgRes) << " 服务端发送数据长度： " << lgRes.dataLenth << endl;
+					break;
+				}
 				cout << "收到登录成功数据，数据长度："<< lgRes.dataLenth << "  应答信息： " << lgRes.info << endl;
 
 				break;
@@ -115,6 +120,11 @@ int Client::Start(){
 				//反序列化，将buf中的数据解析
 				InfoDeserialize(lgRes, buf, tmpn);
 				
+				if(sizeof(lgRes) != lgRes.dataLenth)
+				{
+					cout << "Logout收到数据错误！客户端收到数据长度 ： " << sizeof(lgRes) << " 服务端发送数据长度： " << lgRes.dataLenth << endl;
+					break;
+				}
 				cout << "收到登出成功数据，数据长度："<< lgRes.dataLenth << "  应答信息： " << lgRes.info << endl;
 
 
@@ -122,6 +132,11 @@ int Client::Start(){
 			case LOGINERR:
 				//反序列化，将buf中的数据解析
 				InfoDeserialize(lgRes, buf, tmpn);
+				if(sizeof(lgRes) != lgRes.dataLenth)
+				{
+					cout << "Logerr收到数据错误！客户端收到数据长度 ： " << sizeof(lgRes) << " 服务端发送数据长度： " << lgRes.dataLenth << endl;
+					break;
+				}
 				
 				cout << "错误命令数据，数据长度："<< lgRes.dataLenth << "  应答信息： " << lgRes.info << endl;
 
