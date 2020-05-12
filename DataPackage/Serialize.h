@@ -87,7 +87,6 @@ int InfoSerialize(const INFO &info, char output[] )
 	count += sizeof(info.infoLength);
 	memcpy(output + count, info.info.c_str(), info.info.length());
 	count += info.info.length();
-	cout << "InfoSerialize: count :" << count << endl;
 	return 0;
 }
 

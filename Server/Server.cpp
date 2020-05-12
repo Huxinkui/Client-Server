@@ -107,33 +107,57 @@ int Server::Start()
 	
 	while(1)
 	{	
-		cout << "等待接受消息"<<endl;
 		int n = recv(client_socket,buf,BUFSIZE, 0);
-		if(n <= 0)
+		
+		DataHeader dl;
+		int tmpn = 0;
+		DLDeserialize(dl, buf, tmpn);
+		if(sizeof(buf) != dl.dataLenth)
 		{
-			cout << " 客户端已退出，任务结束";
+
+			cout << "收到数据错误！收到数据长度 ： " << sizeof(buf) << " 发送数据长度： " << dl.dataLenth << endl;
 			break;
 		}
-		// buf[n] = '\0';
-		DataHeader dl;
-		DLDeserialize(dl, buf, n);
+
 		Login login;
 		Logout logout;
-
+		ResultInfo lgRes;
 		switch(dl.cmd)
 		{
 			case LOGIN:
+				//反序列化，将buf中的数据解析
 				LoginDeserialize(login, buf, n);
-				cout << "Name : " << login.name << " Password : " << login.password << endl;
+				cout << "Login: Name : " << login.name << " Password : " << login.password << endl;
+				//设置接受消息应答数据
+				lgRes.info = "用户登录成功";
+				lgRes.cmd = LOGINRESULT;
 				break;
 			case LOGOUT:
 				InfoDeserialize(logout, buf, n);
 				cout <<"Logout: Data Length : " << n <<" Name : " << logout.info << endl;
+				//设置接受消息应答数据
+				lgRes.info = "用户登出成功";
+				lgRes.cmd = LOGOUTRESULT;
+
 				break;
 			default:
 				cout << "The cmd is error !" << endl;
+				//设置接受消息应答数据
+				lgRes.info = "命令输入错误，请检查命令";
+				lgRes.cmd = LOGINERR;
+
 				break;
 		}
+
+		lgRes.infoLength = lgRes.info.length();
+		lgRes.dataLenth = sizeof(lgRes);
+
+		//序列化
+		char tmpbuf[BUFSIZE];
+		memset(tmpbuf, 0, sizeof(char[BUFSIZE]));
+		InfoSerialize(lgRes,tmpbuf);
+		//发送应答数据
+		send(client_socket,tmpbuf,sizeof(tmpbuf),0);
 
 
 	}

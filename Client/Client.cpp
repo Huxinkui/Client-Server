@@ -46,7 +46,6 @@ int Client::Start(){
 		cout << "create socket error" << endl;
 		return -1;
 	}
-	memset(buf, 0, sizeof(buf[BUFSIZE]));
 	memset(&server_sockaddr, 0, sizeof(server_sockaddr));
 
 	server_sockaddr.sin_family = AF_INET;
@@ -71,23 +70,65 @@ int Client::Start(){
 			login.nameLength = login.name.length();
 			login.passwordLength = login.password.length();
 			login.dataLenth = sizeof(login);
-			cout << "Login name :" << login.name <<endl;
+			login.cmd = LOGIN;
 			char tmpbuf[2048] = {0};
 			LoginSerialize(login, tmpbuf);
-			cout << "Length :" << login.dataLenth << endl;
 			send(client_socket,tmpbuf,sizeof(tmpbuf),0);
+
 		}
 		else if(0 == strcmp(m_msg.c_str(), "Logout")){
 			Logout loginout;
 			loginout.info = "Huxinkui";
 			loginout.infoLength = loginout.info.length();
 			loginout.dataLenth = sizeof(loginout);
+			loginout.cmd = LOGOUT;
 			cout << "Logout name :" << loginout.info <<endl;
 			char tmpbuf[2048] = {0};
 			InfoSerialize(loginout, tmpbuf);
 			send(client_socket,tmpbuf,sizeof(tmpbuf),0);
 		}
+
+		memset(buf, 0, sizeof(buf[BUFSIZE]));
+		int n = recv(client_socket,buf,BUFSIZE, 0);
 		
+		DataHeader dl;
+		int tmpn = 0;
+		DLDeserialize(dl, buf, tmpn);
+		if(n != dl.dataLenth)
+		{
+			cout << "收到数据错误！收到数据长度 ： " << sizeof(buf) << " 发送数据长度： " << dl.dataLenth << endl;
+			break;
+		}
+
+		ResultInfo lgRes;
+
+		switch(dl.cmd)
+		{
+			case LOGINRESULT:
+				//反序列化，将buf中的数据解析
+				InfoDeserialize(lgRes, buf, tmpn);
+				
+				cout << "收到登录成功数据，数据长度："<< lgRes.dataLenth << "  应答信息： " << lgRes.info << endl;
+
+				break;
+			case LOGOUTRESULT:
+				//反序列化，将buf中的数据解析
+				InfoDeserialize(lgRes, buf, tmpn);
+				
+				cout << "收到登出成功数据，数据长度："<< lgRes.dataLenth << "  应答信息： " << lgRes.info << endl;
+
+
+				break;
+			case LOGINERR:
+				//反序列化，将buf中的数据解析
+				InfoDeserialize(lgRes, buf, tmpn);
+				
+				cout << "错误命令数据，数据长度："<< lgRes.dataLenth << "  应答信息： " << lgRes.info << endl;
+
+
+				break;
+		}
+
 		
 		// int n = recv(client_socket,buf,BUFSIZE, 0);
 		// //cout << "recv size : " << n <<endl; 
