@@ -4,6 +4,7 @@
 #include<iostream>
 #include<string>
 #include<cstring>
+#include<vector>
 #include<sys/socket.h>
 #include<netinet/in.h>
 #include<arpa/inet.h>
@@ -29,7 +30,7 @@ public:
 	int Start();
 	int set_port();
 	int get_port();
-
+	int Process(int client_socket);
 private:
 	Server();
 	static Server * m_server;
@@ -43,6 +44,8 @@ private:
 	struct sockaddr_in  client_sockaddr;//客户端网络地址结构体
 
 	char buf[BUFSIZE];//数据缓冲区
+
+	std::vector<int> g_clients; //客户端连接池
 
 };
 
