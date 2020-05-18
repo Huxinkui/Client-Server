@@ -45,39 +45,64 @@ int Server::get_port()
 {
 	return m_port;
 }
-int Server::Process(int client_socket)
+
+int Server::max_fd(vector<int> fd)
 {
-	int n = recv(client_socket,buf,BUFSIZE, 0);
-	if(n < 0)
+	int max = server_socket;
+	for(size_t i = 0; i < fd.size(); i++)
 	{
-		cout << "接收消息错误" << endl;
-		return -1;
+		if(fd[i] > max)
+		{
+			max = fd[i];
+		}
 	}
+	return max;
+}
+
+int Server::Process(int tmp_socket)
+{
+	char databuf[BUFSIZE];
+	char tmpdatabuf[256];
+	memset(databuf, 0, BUFSIZE);
+	memset(tmpdatabuf, 0, 256);
+	int n = 0;
+	while( (n = recv(tmp_socket,tmpdatabuf,256, 0) )> 0)
+	{
+		cout << "Recv data length :" << n << " data : " << *tmpdatabuf << endl;
+		strcat(databuf, tmpdatabuf);
+		memset(tmpdatabuf, 0, 256);
+	}
+	// if(n < 0)
+	// {
+	// 	cout << "接收消息错误" << endl;
+	// 	return -1;
+	// }
 	DataHeader dl;
 	int tmpn = 0;
-	DLDeserialize(dl, buf, tmpn);
+	DLDeserialize(dl, databuf, tmpn);
 	
 
 	Login login;
 	Logout logout;
 	ResultInfo lgRes;
+	
 	switch(dl.cmd)
 	{
 		case LOGIN:
 			//反序列化，将buf中的数据解析
-			LoginDeserialize(login, buf, n);
+			LoginDeserialize(login, databuf, n);
 			if(sizeof(login) != login.dataLenth)
 			{
 				cout << "Login收到数据错误！服务端收到数据长度 ： " << sizeof(login) << " 客户端发送数据长度： " << login.dataLenth << endl;
 				break;
 			}
-			cout << "Login: Name : " << login.name << " Password : " << login.password << endl;
+			cout << "登录成功！ Login: Name : " << login.name << " Password : " << login.password << endl;
 			//设置接受消息应答数据
 			lgRes.info = "用户登录成功";
 			lgRes.cmd = LOGINRESULT;
 			break;
 		case LOGOUT:
-			InfoDeserialize(logout, buf, n);
+			InfoDeserialize(logout, databuf, n);
 
 			if(sizeof(logout) != logout.dataLenth)
 			{
@@ -95,7 +120,6 @@ int Server::Process(int client_socket)
 			//设置接受消息应答数据
 			lgRes.info = "命令输入错误，请检查命令";
 			lgRes.cmd = LOGINERR;
-
 			break;
 	}
 
@@ -107,7 +131,8 @@ int Server::Process(int client_socket)
 	memset(tmpbuf, 0, sizeof(char[BUFSIZE]));
 	InfoSerialize(lgRes,tmpbuf);
 	//发送应答数据
-	send(client_socket,tmpbuf,sizeof(tmpbuf),0);
+	send(tmp_socket,tmpbuf,sizeof(tmpbuf),0);
+	return 0;
 }
 
 int Server::Start()
@@ -149,7 +174,7 @@ int Server::Start()
 	{
 		cout << "监听网络端口成功" << endl;
 	}
-	socklen_t  socksize = sizeof(client_sockaddr);
+	
 	// m_dataPackage.name = "HuXinkui";
 	// m_dataPackage.Gender = "Male";
 	// m_dataPackage.age = 28;
@@ -174,36 +199,43 @@ int Server::Start()
 		FD_SET(server_socket, &fdWrite);
 		FD_SET(server_socket, &fdExp);
 		//将所有的客户端连接的socket套接字设置到fdRead中，调用select()判断是否有数据
-		for(auto n = 0 ; n <g_clients.size(); n++)
+		for(int n = g_clients.size() -1 ; n >= 0; n--)
 		{
 			FD_SET(g_clients[n], &fdRead);
 		}
 
 		//select 网络模型 第一个参数nfds 是一个整数，是指fd_set集合中所有描述符（socket）的范围，而不是数量
 		//就是所有文件描述符+1
-		int ret = select(server_socket+1, &fdRead, &fdWrite,&fdExp,NULL);
+		cout << "server_socket: " <<  server_socket <<" fd_max: "<< max_fd(g_clients) << endl;
+		
+		int ret = select(max_fd(g_clients) + 1, &fdRead, &fdWrite,&fdExp,NULL);
 		if(ret < 0)
 		{
 			cout << "select 任务结束。" <<endl;
 			break;
 		}
-		//判断server_socket是不在fdRead中
+		//如果套接字句柄还在fd_set里，说明客户端已经有connect的请求发过来了，马上可以accept成功
 		if(FD_ISSET(server_socket, &fdRead))
 		{
 			//将server_socket在fdRead中清除
 			FD_CLR(server_socket, &fdRead);
+
+			sockaddr_in client_sockaddr = {};
+			socklen_t  socksize = sizeof(client_sockaddr);
+			//client_sockaddr = INVALID_SOCKET;
 			if((client_socket = accept(server_socket,(struct sockaddr *)&client_sockaddr, &socksize)) == -1)
 			{
 				cout << "客户端连接失败" << endl;
 				//continue;
 			}
+
 			g_clients.push_back(client_socket);
 		
 			cout << "新客户端加入： IP = " << inet_ntoa(client_sockaddr.sin_addr) << endl;
 		}
 
 		//需要对客户端连接池中的所有连接的消息进行处理
-		for(auto i = 0; i < g_clients.size(); i++)
+		for(size_t i = 0; i < g_clients.size(); i++)
 		{
 			Process(g_clients[i]);
 		}

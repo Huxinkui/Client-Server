@@ -30,6 +30,7 @@ public:
 	int Start();
 	int set_port();
 	int get_port();
+	int max_fd(vector<int> fd);
 	int Process(int client_socket);
 private:
 	Server();
@@ -41,8 +42,8 @@ private:
 	int server_socket;//服务端监听套接字
 	int client_socket;//客户端套接字
 	struct sockaddr_in  server_sockaddr;//服务端网络地址结构体
-	struct sockaddr_in  client_sockaddr;//客户端网络地址结构体
-
+	//struct sockaddr_in  client_sockaddr;//客户端网络地址结构体
+	
 	char buf[BUFSIZE];//数据缓冲区
 
 	std::vector<int> g_clients; //客户端连接池
