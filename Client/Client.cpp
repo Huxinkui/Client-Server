@@ -69,27 +69,38 @@ int Client::Start(){
 			login.password = "1234567890";
 			login.nameLength = login.name.length();
 			login.passwordLength = login.password.length();
-			login.dataLenth = sizeof(login);
 			login.cmd = LOGIN;
-			char tmpbuf[2048] = {0};
+			login.dataLenth = sizeof(login);
+			char tmpbuf[BUFSIZE] = {0};
 			LoginSerialize(login, tmpbuf);
+			cout << "Send Before !" << endl;
 			send(client_socket,tmpbuf,sizeof(tmpbuf),0);
 
+			cout << "Send After !" << endl;
 		}
 		else if(0 == strcmp(m_msg.c_str(), "Logout")){
 			Logout loginout;
 			loginout.info = "Huxinkui";
 			loginout.infoLength = loginout.info.length();
-			loginout.dataLenth = sizeof(loginout);
 			loginout.cmd = LOGOUT;
+			loginout.dataLenth = sizeof(loginout);
 			cout << "Logout name :" << loginout.info <<endl;
-			char tmpbuf[2048] = {0};
+			char tmpbuf[BUFSIZE] = {0};
 			InfoSerialize(loginout, tmpbuf);
+			cout << "Send Before !" << endl;
 			send(client_socket,tmpbuf,sizeof(tmpbuf),0);
+			cout << "Send After !" << endl;
+		}
+		else
+		{
+			cout << "命令输入错误，请重新输入： Login, Logout, exit" << endl;
+			continue;
 		}
 
 		memset(buf, 0, sizeof(buf[BUFSIZE]));
+			cout << "RECV Before !" << endl;
 		int n = recv(client_socket,buf,BUFSIZE, 0);
+			cout << "RECV After !" << endl;
 		if(n < 0)
 		{
 			cout << "接收消息错误"<<endl;
@@ -145,14 +156,6 @@ int Client::Start(){
 		}
 
 		
-		// int n = recv(client_socket,buf,BUFSIZE, 0);
-		// //cout << "recv size : " << n <<endl; 
-		// DataPackage  dp ;
-		// Deserialize(dp, buf, n);
-		// if (n > 0 )
-		// {
-		// 	cout << "name : " << dp.name << " age: "<< dp.age << " Gender: "<< dp.Gender << endl;
-		// }
 		
 	}
 	close(client_socket);

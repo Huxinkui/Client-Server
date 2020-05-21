@@ -62,21 +62,19 @@ int Server::max_fd(vector<int> fd)
 int Server::Process(int tmp_socket)
 {
 	char databuf[BUFSIZE];
-	char tmpdatabuf[256];
+	//char tmpdatabuf[BUFSIZE];
 	memset(databuf, 0, BUFSIZE);
-	memset(tmpdatabuf, 0, 256);
-	int n = 0;
-	while( (n = recv(tmp_socket,tmpdatabuf,256, 0) )> 0)
+	//memset(tmpdatabuf, 0, BUFSIZE);
+			cout << "RECV Before !" << endl;
+	int n = recv(tmp_socket,databuf,BUFSIZE, 0);
+	
+			cout << "RECV After !" << endl;
+	if(n < 0)
 	{
-		cout << "Recv data length :" << n << " data : " << *tmpdatabuf << endl;
-		strcat(databuf, tmpdatabuf);
-		memset(tmpdatabuf, 0, 256);
+		cout << "Socket err !" <<endl;
 	}
-	// if(n < 0)
-	// {
-	// 	cout << "接收消息错误" << endl;
-	// 	return -1;
-	// }
+	
+
 	DataHeader dl;
 	int tmpn = 0;
 	DLDeserialize(dl, databuf, tmpn);
@@ -131,7 +129,9 @@ int Server::Process(int tmp_socket)
 	memset(tmpbuf, 0, sizeof(char[BUFSIZE]));
 	InfoSerialize(lgRes,tmpbuf);
 	//发送应答数据
+	cout << "Send Before !" << endl;
 	send(tmp_socket,tmpbuf,sizeof(tmpbuf),0);
+	cout << "Send After !" << endl;
 	return 0;
 }
 
@@ -175,15 +175,7 @@ int Server::Start()
 		cout << "监听网络端口成功" << endl;
 	}
 	
-	// m_dataPackage.name = "HuXinkui";
-	// m_dataPackage.Gender = "Male";
-	// m_dataPackage.age = 28;
-	// m_dataPackage.name_size = sizeof(m_dataPackage.name);
-	// m_dataPackage.Gender_size = sizeof(m_dataPackage.Gender);
 
-	// cout << "DataPackage size :" << sizeof(m_dataPackage) << endl;
-	// cout << "DataPackage size :" << sizeof(DataPackage) << endl;
-	
 	while(1)
 	{	
 		//伯克利 socket 
@@ -208,7 +200,7 @@ int Server::Start()
 		//就是所有文件描述符+1
 		cout << "server_socket: " <<  server_socket <<" fd_max: "<< max_fd(g_clients) << endl;
 		
-		int ret = select(max_fd(g_clients) + 1, &fdRead, &fdWrite,&fdExp,NULL);
+		int ret = select(server_socket + 1, &fdRead, &fdWrite,&fdExp,NULL);
 		if(ret < 0)
 		{
 			cout << "select 任务结束。" <<endl;
@@ -232,16 +224,22 @@ int Server::Start()
 			g_clients.push_back(client_socket);
 		
 			cout << "新客户端加入： IP = " << inet_ntoa(client_sockaddr.sin_addr) << endl;
+
 		}
 
 		//需要对客户端连接池中的所有连接的消息进行处理
-		for(size_t i = 0; i < g_clients.size(); i++)
+		for(int i = g_clients.size() - 1; i >=0 ; i--)
 		{
 			Process(g_clients[i]);
 		}
 		
 
 
+	}
+
+	for(int i = g_clients.size() - 1; i >=0 ; i--)
+	{
+			close(g_clients[i]);
 	}
 	close(client_socket);
 	close(server_socket);
