@@ -65,10 +65,10 @@ int Server::Process(int tmp_socket)
 	//char tmpdatabuf[BUFSIZE];
 	memset(databuf, 0, BUFSIZE);
 	//memset(tmpdatabuf, 0, BUFSIZE);
-			cout << "RECV Before !" << endl;
+			//cout << "RECV Before !" << endl;
 	int n = recv(tmp_socket,databuf,BUFSIZE, 0);
 	
-			cout << "RECV After !" << endl;
+		//	cout << "RECV After !" << endl;
 	if(n < 0)
 	{
 		cout << "Socket err !" <<endl;
@@ -129,9 +129,9 @@ int Server::Process(int tmp_socket)
 	memset(tmpbuf, 0, sizeof(char[BUFSIZE]));
 	InfoSerialize(lgRes,tmpbuf);
 	//发送应答数据
-	cout << "Send Before !" << endl;
+	//cout << "Send Before !" << endl;
 	send(tmp_socket,tmpbuf,sizeof(tmpbuf),0);
-	cout << "Send After !" << endl;
+	//cout << "Send After !" << endl;
 	return 0;
 }
 
@@ -200,13 +200,13 @@ int Server::Start()
 		//就是所有文件描述符+1
 		cout << "server_socket: " <<  server_socket <<" fd_max: "<< max_fd(g_clients) << endl;
 		
-		int ret = select(server_socket + 1, &fdRead, &fdWrite,&fdExp,NULL);
+		int ret = select(max_fd(g_clients) + 1, &fdRead, &fdWrite,&fdExp,NULL);
 		if(ret < 0)
 		{
 			cout << "select 任务结束。" <<endl;
 			break;
 		}
-		//如果套接字句柄还在fd_set里，说明客户端已经有connect的请求发过来了，马上可以accept成功
+			//如果套接字句柄还在fd_set里，说明客户端已经有connect的请求发过来了，马上可以accept成功
 		if(FD_ISSET(server_socket, &fdRead))
 		{
 			//将server_socket在fdRead中清除
@@ -224,15 +224,20 @@ int Server::Start()
 			g_clients.push_back(client_socket);
 		
 			cout << "新客户端加入： IP = " << inet_ntoa(client_sockaddr.sin_addr) << endl;
+			Process(client_socket);
+		}
+		else{ //如果没有新的客户端连接，需要对客户端连接池中的所有连接的消息进行处理
+			 
+			for(int i = g_clients.size() - 1; i >=0 ; i--)
+			{
+				if(FD_ISSET(g_clients[i], &fdRead)) //循环判断老的连接是否在fdRead中，如果存在说明有消息接收，需要处理
+				{
+					cout << "老的套接字有数据需要接收，套接字编号 : " << g_clients[i]  << endl; 
+					Process(g_clients[i]);
+				}
+			}
 
 		}
-
-		//需要对客户端连接池中的所有连接的消息进行处理
-		for(int i = g_clients.size() - 1; i >=0 ; i--)
-		{
-			Process(g_clients[i]);
-		}
-		
 
 
 	}
