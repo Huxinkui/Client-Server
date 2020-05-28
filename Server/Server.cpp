@@ -200,7 +200,8 @@ int Server::Start()
 		//就是所有文件描述符+1
 		cout << "server_socket: " <<  server_socket <<" fd_max: "<< max_fd(g_clients) << endl;
 		
-		int ret = select(max_fd(g_clients) + 1, &fdRead, &fdWrite,&fdExp,NULL);
+		timeval t = {1,0};
+		int ret = select(max_fd(g_clients) + 1, &fdRead, &fdWrite,&fdExp,&t);
 		if(ret < 0)
 		{
 			cout << "select 任务结束。" <<endl;
@@ -224,7 +225,7 @@ int Server::Start()
 			g_clients.push_back(client_socket);
 		
 			cout << "新客户端加入： IP = " << inet_ntoa(client_sockaddr.sin_addr) << endl;
-			Process(client_socket);
+			//Process(client_socket);
 		}
 		else{ //如果没有新的客户端连接，需要对客户端连接池中的所有连接的消息进行处理
 			 
@@ -236,8 +237,10 @@ int Server::Start()
 					Process(g_clients[i]);
 				}
 			}
-
 		}
+
+
+		cout << " 处理其他数据 ！" << endl;
 
 
 	}

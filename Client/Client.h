@@ -26,7 +26,7 @@ public:
 	string GetIp();
 	int SetPort(int port);
 	int GetPort();
-
+	int Process(int tmp_socket);
 private:
 	int m_port;//监听端口
 	string m_ip;
