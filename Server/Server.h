@@ -16,7 +16,7 @@
 #include "DataPackage.h"
 using namespace std;
 
-#define BUFSIZE  1024
+#define BUFSIZE  2048
 
 
 

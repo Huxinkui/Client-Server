@@ -66,18 +66,20 @@ int Server::Process(int tmp_socket)
 	memset(databuf, 0, BUFSIZE);
 	//memset(tmpdatabuf, 0, BUFSIZE);
 			//cout << "RECV Before !" << endl;
-	int n = recv(tmp_socket,databuf,BUFSIZE, 0);
+	DataHeader dl;
+	int n = recv(tmp_socket,databuf,dl.ReturnSize(), 0);
 	
 		//	cout << "RECV After !" << endl;
-	if(n < 0)
+	if(n <= 0)
 	{
 		cout << "Socket err !" <<endl;
+		return -1;
 	}
-	
 
-	DataHeader dl;
+	
 	int tmpn = 0;
 	DLDeserialize(dl, databuf, tmpn);
+	cout << "DL dataLenth : " << dl.dataLenth << endl;
 	
 
 	Login login;
@@ -87,11 +89,17 @@ int Server::Process(int tmp_socket)
 	switch(dl.cmd)
 	{
 		case LOGIN:
+
+			memset(databuf, 0, sizeof(databuf[BUFSIZE]));
+			n = recv(tmp_socket,databuf,dl.dataLenth - dl.ReturnSize(), 0);
+
+			cout << "sizeof databuf :" << sizeof(databuf) << endl;
 			//反序列化，将buf中的数据解析
 			LoginDeserialize(login, databuf, n);
-			if(sizeof(login) != login.dataLenth)
+
+			if(login.ReturnSize() != (dl.dataLenth - dl.ReturnSize()))
 			{
-				cout << "Login收到数据错误！服务端收到数据长度 ： " << sizeof(login) << " 客户端发送数据长度： " << login.dataLenth << endl;
+				cout << "Login收到数据错误！服务端收到数据长度 ： " << login.ReturnSize() << " 客户端发送数据长度： " << dl.dataLenth << endl;
 				break;
 			}
 			cout << "登录成功！ Login: Name : " << login.name << " Password : " << login.password << endl;
@@ -100,11 +108,14 @@ int Server::Process(int tmp_socket)
 			lgRes.cmd = LOGINRESULT;
 			break;
 		case LOGOUT:
-			InfoDeserialize(logout, databuf, n);
 
-			if(sizeof(logout) != logout.dataLenth)
+			memset(databuf, 0, sizeof(databuf[BUFSIZE]));
+			n = recv(tmp_socket,databuf,dl.dataLenth - dl.ReturnSize(), 0);
+
+			InfoDeserialize(logout, databuf, n);
+			if(logout.ReturnSize() != (dl.dataLenth - dl.ReturnSize()))
 			{
-				cout << "Logout收到数据错误！服务端收到数据长度 ： " << sizeof(logout) << " 客户端发送数据长度： " << logout.dataLenth << endl;
+				cout << "Logout收到数据错误！服务端收到数据长度 ： " << logout.ReturnSize() << " 客户端发送数据长度： " << dl.dataLenth << endl;
 				break;
 			}
 			cout <<"Logout: Data Length : " << n <<" Name : " << logout.info << endl;
@@ -128,6 +139,7 @@ int Server::Process(int tmp_socket)
 	char tmpbuf[BUFSIZE];
 	memset(tmpbuf, 0, sizeof(char[BUFSIZE]));
 	InfoSerialize(lgRes,tmpbuf);
+	cout << "send data.dataLenth = " << lgRes.dataLenth << endl;
 	//发送应答数据
 	//cout << "Send Before !" << endl;
 	send(tmp_socket,tmpbuf,sizeof(tmpbuf),0);
@@ -200,7 +212,7 @@ int Server::Start()
 		//就是所有文件描述符+1
 		cout << "server_socket: " <<  server_socket <<" fd_max: "<< max_fd(g_clients) << endl;
 		
-		timeval t = {1,0};
+		timeval t = {0,0};
 		int ret = select(max_fd(g_clients) + 1, &fdRead, &fdWrite,&fdExp,&t);
 		if(ret < 0)
 		{
@@ -234,11 +246,15 @@ int Server::Start()
 				if(FD_ISSET(g_clients[i], &fdRead)) //循环判断老的连接是否在fdRead中，如果存在说明有消息接收，需要处理
 				{
 					cout << "老的套接字有数据需要接收，套接字编号 : " << g_clients[i]  << endl; 
-					Process(g_clients[i]);
+					int ret = Process(g_clients[i]);
+					if( ret == -1)
+					{
+						g_clients.erase (g_clients.begin()+i);
+						close(g_clients[i]);
+					}
 				}
 			}
 		}
-
 
 		cout << " 处理其他数据 ！" << endl;
 

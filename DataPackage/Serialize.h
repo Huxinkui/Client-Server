@@ -55,23 +55,36 @@ int LoginSerialize(const Login &login, char output[])
 	//cout << " name size :" << login.name.length() << endl;
 	memcpy(output + count, login.password.c_str(), login.password.length());
 	count += login.password.length();
+	//memcpy(output + count, login.Data , 1024);
+	//count += 1024;
 	return 0;
 }
+
+
 int LoginDeserialize(Login &login, const char *input, int count)
 {
 	int offset = 0;
-	memcpy(&login.dataLenth, input, sizeof(login.dataLenth));
-	offset += sizeof(login.dataLenth);
-	memcpy(&login.cmd, input + offset, sizeof(login.cmd));
-	offset += sizeof(login.cmd);
+	//memcpy(&login.dataLenth, input, sizeof(login.dataLenth));
+	//offset += sizeof(login.dataLenth);
+	//memcpy(&login.cmd, input + offset, sizeof(login.cmd));
+	//offset += sizeof(login.cmd);
+	
+	cout << "LoginDeserialize begin " << endl ;
 	memcpy(&login.nameLength, input + offset, sizeof(login.nameLength));
 	offset += sizeof(login.nameLength);
+	cout << "login.nameLength " << login.nameLength  << " login.nameLength size " << sizeof(login.nameLength)<< endl;
 	memcpy(&login.passwordLength, input + offset, sizeof(login.passwordLength));
 	offset += sizeof(login.passwordLength);
+	cout << "login.passwordLength " << login.passwordLength <<  " login.passwordLength size " << sizeof(login.passwordLength) << endl;
 	login.name.append(input + offset, login.nameLength);
+	cout << "login.name " << login.name <<  " login.name size " << sizeof(login.name)  <<  endl;
 	offset += login.nameLength;
 	login.password.append(input + offset, login.passwordLength);
-	//offset += login.passwordLength;
+	cout << "login.password " << login.password <<  " login.password size " << sizeof(login.password)  << endl;
+	offset += login.passwordLength;
+	//memcpy(&login.Data, input + offset, 1024);
+	//offset += 1024;
+
 	return 0;
 }
 
@@ -94,13 +107,16 @@ template<class INFO>
 int InfoDeserialize(INFO &info, const char *input, int count)
 {
 	int offset = 0;
-	memcpy(&info.dataLenth, input, sizeof(info.dataLenth));
-	offset += sizeof(info.dataLenth);
-	memcpy(&info.cmd, input + offset, sizeof(info.cmd));
-	offset += sizeof(info.cmd);
+	//memcpy(&info.dataLenth, input, sizeof(info.dataLenth));
+	//offset += sizeof(info.dataLenth);
+	//memcpy(&info.cmd, input + offset, sizeof(info.cmd));
+	//offset += sizeof(info.cmd);
+	cout << "This is Deserialize begin " <<  endl;
 	memcpy(&info.infoLength, input + offset, sizeof(info.infoLength));
 	offset += sizeof(info.infoLength);
+	cout << "This is Deserialize begin 2 " <<  endl;
 	info.info.append(input + offset, info.infoLength);
+	cout << "This is Deserialize end " <<  endl;
 	return 0;
 }
 template<class DL>

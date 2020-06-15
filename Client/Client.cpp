@@ -31,16 +31,18 @@ int Client::Process(int tmp_socket)
 {
 		memset(buf, 0, sizeof(buf[BUFSIZE]));
 			//cout << "RECV Before !" << endl;
-		int n = recv(tmp_socket,buf,BUFSIZE, 0);
+		DataHeader dl;
+		int n = recv(tmp_socket,buf,dl.ReturnSize(), 0);
 			//cout << "RECV After !" << endl;
 		if(n < 0)
 		{
 			cout << "接收消息错误"<<endl;
 			return -1 ;
 		}
-		DataHeader dl;
+		
 		int tmpn = 0;
 		DLDeserialize(dl, buf, tmpn);
+		//cout << "DL dataLenth : " << dl.dataLenth << endl;
 		
 
 		ResultInfo lgRes;
@@ -48,40 +50,48 @@ int Client::Process(int tmp_socket)
 		switch(dl.cmd)
 		{
 			case LOGINRESULT:
+				memset(buf, 0, sizeof(buf[BUFSIZE]));
+				n = recv(tmp_socket,buf,dl.dataLenth - dl.ReturnSize(), 0);
+
+				cout << "sizeof buf :" << sizeof(buf) << endl;
 				//反序列化，将buf中的数据解析
 				InfoDeserialize(lgRes, buf, tmpn);
 
-				if(sizeof(lgRes) != lgRes.dataLenth)
+				if(lgRes.ReturnSize() != (dl.dataLenth - dl.ReturnSize()))
 				{
-					cout << "Login收到数据错误！客户端收到数据长度 ： " << sizeof(lgRes) << " 服务端发送数据长度： " << lgRes.dataLenth << endl;
+					cout << "Login收到数据错误！客户端收到数据长度 ： " << lgRes.ReturnSize() << " 服务端发送数据长度： " << dl.dataLenth << endl;
 					break;
 				}
-				cout << "收到登录成功数据，数据长度："<< lgRes.dataLenth << "  应答信息： " << lgRes.info << endl;
+				cout << "收到登录成功数据，数据长度："<< dl.dataLenth << "  应答信息： " << lgRes.info << endl;
 
 				break;
 			case LOGOUTRESULT:
+				memset(buf, 0, sizeof(buf[BUFSIZE]));
+				n = recv(tmp_socket,buf,dl.dataLenth - dl.ReturnSize(), 0);
 				//反序列化，将buf中的数据解析
 				InfoDeserialize(lgRes, buf, tmpn);
 				
-				if(sizeof(lgRes) != lgRes.dataLenth)
+				if(lgRes.ReturnSize() != (dl.dataLenth - dl.ReturnSize()))
 				{
-					cout << "Logout收到数据错误！客户端收到数据长度 ： " << sizeof(lgRes) << " 服务端发送数据长度： " << lgRes.dataLenth << endl;
+					cout << "Logout收到数据错误！客户端收到数据长度 ： " << lgRes.ReturnSize() << " 服务端发送数据长度： " << dl.dataLenth << endl;
 					break;
 				}
-				cout << "收到登出成功数据，数据长度："<< lgRes.dataLenth << "  应答信息： " << lgRes.info << endl;
+				cout << "收到登出成功数据，数据长度："<< dl.dataLenth << "  应答信息： " << lgRes.info << endl;
 
 
 				break;
 			case LOGINERR:
+				memset(buf, 0, sizeof(buf[BUFSIZE]));
+				n = recv(tmp_socket,buf,dl.dataLenth - dl.ReturnSize(), 0);
 				//反序列化，将buf中的数据解析
 				InfoDeserialize(lgRes, buf, tmpn);
-				if(sizeof(lgRes) != lgRes.dataLenth)
+				if(lgRes.ReturnSize() != (dl.dataLenth - dl.ReturnSize()))
 				{
-					cout << "Logerr收到数据错误！客户端收到数据长度 ： " << sizeof(lgRes) << " 服务端发送数据长度： " << lgRes.dataLenth << endl;
+					cout << "Logerr收到数据错误！客户端收到数据长度 ： " << lgRes.ReturnSize() << " 服务端发送数据长度： " << dl.dataLenth << endl;
 					break;
 				}
 				
-				cout << "错误命令数据，数据长度："<< lgRes.dataLenth << "  应答信息： " << lgRes.info << endl;
+				cout << "错误命令数据，数据长度："<< dl.dataLenth << "  应答信息： " << lgRes.info << endl;
 
 
 				break;
@@ -122,7 +132,7 @@ int Client::Start(){
 		FD_ZERO(&fdRead);
 
 		FD_SET(client_socket, &fdRead);
-		timeval t = {1,0};
+		timeval t = {0,0};
 		int ret = select(client_socket + 1, &fdRead, NULL,NULL,&t);
 		if(ret < 0)
 		{
@@ -139,6 +149,7 @@ int Client::Start(){
 		else 
 		{
 			m_msg = "Login";
+			//cin >> m_msg;
 			if (0 == strcmp(m_msg.c_str(), "exit"))
 			{
 				
@@ -147,30 +158,32 @@ int Client::Start(){
 			else if(0 == strcmp(m_msg.c_str(), "Login")){
 
 				Login login;
+				DataHeader dl;
 				login.name = "Huxinkui";
 				login.password = "1234567890";
 				login.nameLength = login.name.length();
 				login.passwordLength = login.password.length();
 				login.cmd = LOGIN;
-				login.dataLenth = sizeof(login);
+				login.dataLenth = login.ReturnSize() + dl.ReturnSize();
 				char tmpbuf[BUFSIZE] = {0};
 				LoginSerialize(login, tmpbuf);
 				//cout << "Send Before !" << endl;
-				send(client_socket,tmpbuf,sizeof(tmpbuf),0);
+				send(client_socket,tmpbuf,login.dataLenth,0);
 
 				//cout << "Send After !" << endl;
 			}
 			else if(0 == strcmp(m_msg.c_str(), "Logout")){
 				Logout loginout;
+				DataHeader dl;
 				loginout.info = "Huxinkui";
 				loginout.infoLength = loginout.info.length();
 				loginout.cmd = LOGOUT;
-				loginout.dataLenth = sizeof(loginout);
+				loginout.dataLenth = loginout.ReturnSize() + dl.ReturnSize();
 				cout << "Logout name :" << loginout.info <<endl;
 				char tmpbuf[BUFSIZE] = {0};
 				InfoSerialize(loginout, tmpbuf);
 				//cout << "Send Before !" << endl;
-				send(client_socket,tmpbuf,sizeof(tmpbuf),0);
+				send(client_socket,tmpbuf,loginout.dataLenth,0);
 				//cout << "Send After !" << endl;
 			}
 			else
