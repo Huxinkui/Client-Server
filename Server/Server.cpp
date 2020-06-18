@@ -89,9 +89,9 @@ int Server::Process(int tmp_socket)
 		case LOGIN:
 			//反序列化，将buf中的数据解析
 			LoginDeserialize(login, databuf, n);
-			if(sizeof(login) != login.dataLenth)
+			if((dl.LenthReturn() + login.LenthReturn()) != login.dataLenth)
 			{
-				cout << "Login收到数据错误！服务端收到数据长度 ： " << sizeof(login) << " 客户端发送数据长度： " << login.dataLenth << endl;
+				cout << "Login收到数据错误！服务端收到数据长度 ： " << dl.LenthReturn() + login.LenthReturn() << " 客户端发送数据长度： " << login.dataLenth << endl;
 				break;
 			}
 			cout << "登录成功！ Login: Name : " << login.name << " Password : " << login.password << endl;
@@ -102,9 +102,9 @@ int Server::Process(int tmp_socket)
 		case LOGOUT:
 			InfoDeserialize(logout, databuf, n);
 
-			if(sizeof(logout) != logout.dataLenth)
+			if((dl.LenthReturn() + logout.LenthReturn()) != logout.dataLenth)
 			{
-				cout << "Logout收到数据错误！服务端收到数据长度 ： " << sizeof(logout) << " 客户端发送数据长度： " << logout.dataLenth << endl;
+				cout << "Logout收到数据错误！服务端收到数据长度 ： " <<dl.LenthReturn() + logout.LenthReturn() << " 客户端发送数据长度： " << logout.dataLenth << endl;
 				break;
 			}
 			cout <<"Logout: Data Length : " << n <<" Name : " << logout.info << endl;
@@ -122,7 +122,7 @@ int Server::Process(int tmp_socket)
 	}
 
 	lgRes.infoLength = lgRes.info.length();
-	lgRes.dataLenth = sizeof(lgRes);
+	lgRes.dataLenth = lgRes.LenthReturn() + dl.LenthReturn();
 
 	//序列化
 	char tmpbuf[BUFSIZE];

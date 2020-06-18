@@ -51,9 +51,9 @@ int Client::Process(int tmp_socket)
 				//反序列化，将buf中的数据解析
 				InfoDeserialize(lgRes, buf, tmpn);
 
-				if(sizeof(lgRes) != lgRes.dataLenth)
+				if((dl.LenthReturn() + lgRes.LenthReturn() ) != lgRes.dataLenth)
 				{
-					cout << "Login收到数据错误！客户端收到数据长度 ： " << sizeof(lgRes) << " 服务端发送数据长度： " << lgRes.dataLenth << endl;
+					cout << "Login收到数据错误！客户端收到数据长度 ： " << dl.LenthReturn() + lgRes.LenthReturn() << " 服务端发送数据长度： " << lgRes.dataLenth << endl;
 					break;
 				}
 				cout << "收到登录成功数据，数据长度："<< lgRes.dataLenth << "  应答信息： " << lgRes.info << endl;
@@ -63,9 +63,9 @@ int Client::Process(int tmp_socket)
 				//反序列化，将buf中的数据解析
 				InfoDeserialize(lgRes, buf, tmpn);
 				
-				if(sizeof(lgRes) != lgRes.dataLenth)
+				if((dl.LenthReturn() + lgRes.LenthReturn() ) != lgRes.dataLenth)
 				{
-					cout << "Logout收到数据错误！客户端收到数据长度 ： " << sizeof(lgRes) << " 服务端发送数据长度： " << lgRes.dataLenth << endl;
+					cout << "Logout收到数据错误！客户端收到数据长度 ： " << dl.LenthReturn() + lgRes.LenthReturn() << " 服务端发送数据长度： " << lgRes.dataLenth << endl;
 					break;
 				}
 				cout << "收到登出成功数据，数据长度："<< lgRes.dataLenth << "  应答信息： " << lgRes.info << endl;
@@ -75,9 +75,9 @@ int Client::Process(int tmp_socket)
 			case LOGINERR:
 				//反序列化，将buf中的数据解析
 				InfoDeserialize(lgRes, buf, tmpn);
-				if(sizeof(lgRes) != lgRes.dataLenth)
+				if((dl.LenthReturn() + lgRes.LenthReturn() ) != lgRes.dataLenth)
 				{
-					cout << "Logerr收到数据错误！客户端收到数据长度 ： " << sizeof(lgRes) << " 服务端发送数据长度： " << lgRes.dataLenth << endl;
+					cout << "Logerr收到数据错误！客户端收到数据长度 ： " << dl.LenthReturn() + lgRes.LenthReturn()  << " 服务端发送数据长度： " << lgRes.dataLenth << endl;
 					break;
 				}
 				
@@ -94,6 +94,7 @@ int Client::Start(){
 
 	//cout << "ip: " << endl;
 	//cin >> m_ip;
+	//m_ip = "49.232.192.248";
 	m_ip = "192.168.31.30";
 	//cout << "prot: " << endl;
 	//cin >> m_port;
@@ -147,12 +148,13 @@ int Client::Start(){
 			else if(0 == strcmp(m_msg.c_str(), "Login")){
 
 				Login login;
+				DataHeader dl;
 				login.name = "Huxinkui";
 				login.password = "1234567890";
 				login.nameLength = login.name.length();
 				login.passwordLength = login.password.length();
 				login.cmd = LOGIN;
-				login.dataLenth = sizeof(login);
+				login.dataLenth = login.LenthReturn() + dl.LenthReturn();
 				char tmpbuf[BUFSIZE] = {0};
 				LoginSerialize(login, tmpbuf);
 				//cout << "Send Before !" << endl;
@@ -162,10 +164,11 @@ int Client::Start(){
 			}
 			else if(0 == strcmp(m_msg.c_str(), "Logout")){
 				Logout loginout;
+				DataHeader dl;
 				loginout.info = "Huxinkui";
 				loginout.infoLength = loginout.info.length();
 				loginout.cmd = LOGOUT;
-				loginout.dataLenth = sizeof(loginout);
+				loginout.dataLenth = loginout.LenthReturn() + dl.LenthReturn();
 				cout << "Logout name :" << loginout.info <<endl;
 				char tmpbuf[BUFSIZE] = {0};
 				InfoSerialize(loginout, tmpbuf);
